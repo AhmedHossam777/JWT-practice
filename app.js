@@ -4,6 +4,7 @@ const express = require('express');
 const morgan = require('morgan');
 const createError = require('http-errors');
 const authRoutes = require('./routes/auth');
+const connectDB = require('./utils/connectDB');
 
 const app = express();
 
@@ -29,6 +30,7 @@ app.use((err, req, res, next) => {
 });
 
 const port = process.env.PORT || 3000;
-app.listen(port, () => {
+app.listen(port, async() => {
+  await connectDB();
   console.log(`Server is running on port ${port}`);
 });
