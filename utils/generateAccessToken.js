@@ -1,6 +1,5 @@
 require('dotenv').config();
 const jwt = require('jsonwebtoken');
-const createError = require('http-errors');
 
 const signAccessToken = (userId) => {
   return new Promise((resolve, reject) => {
@@ -12,23 +11,19 @@ const signAccessToken = (userId) => {
 
     jwt.sign(payload, secret, options, (err, token) => {
       if (err) {
-        console.log(err.message);
-        return reject(createError.InternalServerError());
+        reject(new Error(err.message));
+      } else {
+        resolve(token);
       }
-      resolve(token);
     });
   });
 };
 
 const generateAccessToken = async (user) => {
   const token = await signAccessToken(user._id);
-
-  user.password = undefined;
   return token;
 };
 
 module.exports = {
-  signAccessToken,
   generateAccessToken,
-};  
-
+};

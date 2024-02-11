@@ -2,23 +2,20 @@ const express = require('express');
 const User = require('../models/User');
 const router = express.Router();
 const createError = require('http-errors');
-const authSchema = require('../utils/validateSchema');
 const { generateAccessToken } = require('../utils/generateAccessToken');
 
 router.post('/register', async (req, res, next) => {
   const { email, password } = req.body;
 
-  const result = await authSchema.validateAsync({ email, password });
-
-  const isUserExist = await User.findOne({ email: result.email });
+  const isUserExist = await User.findOne({ email: email });
 
   if (isUserExist) {
     return next(createError(400, 'User already exists'));
   }
 
   const user = await User.create({
-    email: result.email,
-    password: result.password,
+    email: email,
+    password: password,
   });
 
   await user.save();
@@ -31,8 +28,27 @@ router.post('/register', async (req, res, next) => {
   });
 });
 
-router.post('/login', (req, res, next) => {
-  res.send('Login');
+router.post('/login', async (req, res, next) => {
+  const { email, password } = req.body;
+
+  const user = await User.findOne({ email: email }).select('+password');
+
+  if (!user) {
+    return next(createError(404, 'User not found'));
+  }
+
+  const isMatch = await user.comparePassword(password);
+
+  if (!isMatch) {
+    return next(createError(401, 'Invalid email or password'));
+  }
+  const token = await generateAccessToken(user);
+
+  res.status(200).json({
+    status: 'success',
+    user,
+    token,
+  });
 });
 
 router.post('/refresh-token', (req, res, next) => {

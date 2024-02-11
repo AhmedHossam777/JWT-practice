@@ -1,7 +1,6 @@
 const mongoose = require('mongoose');
-const jwt = require('jsonwebtoken');
-const createError = require('http-errors');
 const bcrypt = require('bcrypt');
+const validator = require('validator');
 
 const userSchema = new mongoose.Schema(
   {
@@ -10,11 +9,13 @@ const userSchema = new mongoose.Schema(
       required: true,
       lowercase: true,
       unique: true,
+      validate: [validator.isEmail, 'Invalid Email'],
     },
     password: {
       type: String,
       required: true,
       select: false,
+      minlength: [3, 'Password must be at least 3 characters long'],
     },
   },
   {
@@ -24,10 +25,23 @@ const userSchema = new mongoose.Schema(
 );
 
 userSchema.pre('save', async function (next) {
-  if (!this.isModified('password')) return next();
-  this.password = await bcrypt.hash(this.password, 12);
-  next();
+  try {
+    if (!this.isModified('password')) return next();
+    this.password = await bcrypt.hash(this.password, 12);
+    next();
+  } catch (error) {
+    next(error);
+  }
 });
+
+userSchema.methods.comparePassword = async function (candidatePassword) {
+  try {
+    const isMatch = await bcrypt.compare(candidatePassword, this.password);
+    return isMatch;
+  } catch (error) {
+    throw new Error(error);
+  }
+};
 
 const User = mongoose.model('user', userSchema);
 module.exports = User;
