@@ -2,20 +2,22 @@ const express = require('express');
 const router = express.Router();
 const isLogin = require('../middlewares/isLogin');
 
-const { registerUser, loginUser, getAllUsers } = require('../controllers/user');
+const {
+  registerUser,
+  loginUser,
+  getAllUsers,
+  refreshToken,
+  logout,
+} = require('../controllers/user');
 
 router.post('/register', registerUser);
 
 router.post('/login', loginUser);
 
-router.post('/refresh-token', (req, res, next) => {
-  res.send('Refresh Token');
-});
+router.post('/refresh-token', refreshToken);
 
-router.delete('/logout', (req, res, next) => {
-  res.send('Logout');
-});
+router.delete('/logout', logout);
 
-router.get('/', isLogin,getAllUsers);
+router.get('/', isLogin, getAllUsers);
 
 module.exports = router;

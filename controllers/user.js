@@ -49,6 +49,14 @@ const loginUser = async (req, res, next) => {
   });
 };
 
+const refreshToken = (req, res, next) => {
+  res.send('Refresh Token');
+};
+
+const logout = (req, res, next) => {
+  res.send('Logout');
+};
+
 const getAllUsers = async (req, res, next) => {
   const users = await User.find();
   if (!users) {
@@ -60,4 +68,4 @@ const getAllUsers = async (req, res, next) => {
   });
 };
 
-module.exports = { registerUser, loginUser, getAllUsers };
+module.exports = { registerUser, loginUser, getAllUsers, refreshToken, logout };
