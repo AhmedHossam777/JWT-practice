@@ -3,6 +3,7 @@ const User = require('../models/User');
 const router = express.Router();
 const createError = require('http-errors');
 const authSchema = require('../utils/validateSchema');
+const { generateAccessToken } = require('../utils/generateAccessToken');
 
 router.post('/register', async (req, res, next) => {
   const { email, password } = req.body;
@@ -19,12 +20,14 @@ router.post('/register', async (req, res, next) => {
     email: result.email,
     password: result.password,
   });
-  
+
   await user.save();
+  const token = await generateAccessToken(user);
 
   res.status(201).json({
     status: 'success',
     user,
+    token,
   });
 });
 
