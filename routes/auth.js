@@ -7,6 +7,7 @@ const {
   loginUser,
   getAllUsers,
   logout,
+  refreshToken
 } = require('../controllers/user');
 
 router.post('/register', registerUser);
@@ -14,6 +15,8 @@ router.post('/register', registerUser);
 router.post('/login', loginUser);
 
 router.delete('/logout', logout);
+
+router.post('/refresh-token', refreshToken);
 
 router.get('/', isLogin, getAllUsers);
 

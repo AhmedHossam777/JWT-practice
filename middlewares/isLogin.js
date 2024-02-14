@@ -8,7 +8,7 @@ const isLogin = async (req, res, next) => {
   if (!token) {
     return next(createError(401, 'Unauthorized'));
   }
-  const decoded = verifyToken(token);
+  const decoded = verifyToken(token, process.env.ACCESS_TOKEN_SECRET);
 
   if (decoded === 'TokenExpiredError') {
     return next(createError(401, 'Token expired'));

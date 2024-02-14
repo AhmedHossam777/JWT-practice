@@ -3,7 +3,8 @@ const User = require('../models/User');
 const {
   generateAccessToken,
   generateRefreshToken,
-} = require('../utils/generateAccessToken');
+} = require('../utils/generateTokens.js');
+const verifyToken = require('../utils/verifyToken');
 
 const registerUser = async (req, res, next) => {
   const { email, password } = req.body;
@@ -61,6 +62,35 @@ const loginUser = async (req, res, next) => {
   });
 };
 
+const refreshToken = async (req, res, next) => {
+  const refreshToken = req.body.refreshToken;
+  if (!refreshToken) {
+    return next(createError(400, 'Refresh token is required'));
+  }
+
+  const decoded = verifyToken(refreshToken, process.env.REFRESH_TOKEN_SECRET);
+  if (!decoded || decoded === 'TokenExpiredError') {
+    return next(createError(401, 'Invalid refresh token'));
+  }
+
+  const user = await User.findById(decoded.userId);
+  if (!user) {
+    return next(createError(404, 'User not found'));
+  }
+
+  const [newToken, newRefreshToken] = await Promise.all([
+    generateAccessToken(user),
+    generateRefreshToken(user),
+  ]);
+
+  res.status(200).json({
+    status: 'success',
+    user,
+    token: newToken,
+    refreshToken: newRefreshToken,
+  });
+};
+
 const logout = (req, res, next) => {
   res.send('Logout');
 };
@@ -76,4 +106,4 @@ const getAllUsers = async (req, res, next) => {
   });
 };
 
-module.exports = { registerUser, loginUser, getAllUsers, logout };
+module.exports = { registerUser, loginUser, getAllUsers, logout, refreshToken };

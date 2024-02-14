@@ -19,11 +19,11 @@ const signAccessToken = (userId) => {
   });
 };
 
-
 const generateAccessToken = async (user) => {
   const token = await signAccessToken(user._id);
   return token;
 };
+
 
 const signRefreshToken = (userId) => {
   return new Promise((resolve, reject) => {
