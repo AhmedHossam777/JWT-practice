@@ -1,6 +1,9 @@
 const createError = require('http-errors');
 const User = require('../models/User');
-const { generateAccessToken } = require('../utils/generateAccessToken');
+const {
+  generateAccessToken,
+  generateRefreshToken,
+} = require('../utils/generateAccessToken');
 
 const registerUser = async (req, res, next) => {
   const { email, password } = req.body;
@@ -17,12 +20,16 @@ const registerUser = async (req, res, next) => {
   });
 
   await user.save();
-  const token = await generateAccessToken(user);
+  const [token, refreshToken] = await Promise.all([
+    generateAccessToken(user),
+    generateRefreshToken(user),
+  ]);
 
   res.status(201).json({
     status: 'success',
     user,
     token,
+    refreshToken,
   });
 };
 
@@ -40,17 +47,18 @@ const loginUser = async (req, res, next) => {
   if (!isMatch) {
     return next(createError(401, 'Invalid email or password'));
   }
-  const token = await generateAccessToken(user);
+
+  const [token, refreshToken] = await Promise.all([
+    generateAccessToken(user),
+    generateRefreshToken(user),
+  ]);
 
   res.status(200).json({
     status: 'success',
     user,
     token,
+    refreshToken,
   });
-};
-
-const refreshToken = (req, res, next) => {
-  res.send('Refresh Token');
 };
 
 const logout = (req, res, next) => {
@@ -68,4 +76,4 @@ const getAllUsers = async (req, res, next) => {
   });
 };
 
-module.exports = { registerUser, loginUser, getAllUsers, refreshToken, logout };
+module.exports = { registerUser, loginUser, getAllUsers, logout };

@@ -1,9 +1,10 @@
 const jwt = require('jsonwebtoken');
 
 const verifyToken = (token) => {
+  const secret = process.env.ACCESS_TOKEN_SECRET || process.env.REFRESH_TOKEN_SECRET;
   const decoded = jwt.verify(
     token,
-    process.env.ACCESS_TOKEN_SECRET,
+    secret,
     (err, decoded) => {
       if (err) {
         if (err.name === 'TokenExpiredError') {
