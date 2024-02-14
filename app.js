@@ -6,8 +6,11 @@ const morgan = require('morgan');
 const createError = require('http-errors');
 const authRoutes = require('./routes/auth');
 const connectDB = require('./utils/connectDB');
+const cookieParser = require('cookie-parser');
 
 const app = express();
+
+app.use(cookieParser(process.env.COOKIE_SECRET));
 
 app.use(morgan('dev')); // log requests
 app.use(express.json());
