@@ -7,9 +7,8 @@ const createError = require('http-errors');
 const authRoutes = require('./routes/auth');
 const connectDB = require('./utils/connectDB');
 const cookieParser = require('cookie-parser');
-const redisClient = require('./utils/initRedis');
+require('./utils/initRedis');
 
-redisClient.SET('name', 'Ahmed');
 
 const app = express();
 

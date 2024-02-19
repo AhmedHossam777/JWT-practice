@@ -1,5 +1,6 @@
 require('dotenv').config();
 const jwt = require('jsonwebtoken');
+const jwtRedis = require('./jwtRedis');
 
 const signAccessToken = (userId) => {
   return new Promise((resolve, reject) => {
@@ -24,7 +25,6 @@ const generateAccessToken = async (user) => {
   return token;
 };
 
-
 const signRefreshToken = (userId) => {
   return new Promise((resolve, reject) => {
     const payload = { userId };
@@ -41,14 +41,18 @@ const signRefreshToken = (userId) => {
       }
     });
   });
-}
+};
 
 const generateRefreshToken = async (user) => {
-  const token = await signRefreshToken(user._id);
-  return token;
-}
-
-
+  try {
+    const token = await signRefreshToken(user._id);
+    await jwtRedis.storeRefreshToken(user._id, token);
+    return token;
+  } catch (error) {
+    console.error('Error generating refresh token:', error);
+    throw error;
+  }
+};
 
 module.exports = {
   generateAccessToken,

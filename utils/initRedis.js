@@ -1,4 +1,6 @@
 const redis = require('redis');
+const { promisify } = require('util');
+
 
 const client = redis.createClient({
   port: 6379,

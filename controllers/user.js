@@ -5,6 +5,7 @@ const {
   generateRefreshToken,
 } = require('../utils/generateTokens.js');
 const verifyToken = require('../utils/verifyToken');
+const jwtRedis = require('../utils/jwtRedis.js');
 
 const registerUser = async (req, res, next) => {
   const { email, password } = req.body;
@@ -51,7 +52,7 @@ const loginUser = async (req, res, next) => {
   }
 
   const isMatch = await user.comparePassword(password);
-
+  console.log(isMatch);
   if (!isMatch) {
     return next(createError(401, 'Invalid email or password'));
   }
@@ -60,13 +61,6 @@ const loginUser = async (req, res, next) => {
     generateAccessToken(user),
     generateRefreshToken(user),
   ]);
-
-  res.cookie('access_token', token, {
-    httpOnly: true, // Prevent access from client-side scripts
-    secure: process.env.NODE_ENV === 'production', // Only send over HTTPS in production
-    sameSite: 'strict', // Prevent CSRF attacks
-    maxAge: 1000 * 60 * 60 * 24 * 7, // 7 days in milliseconds
-  });
 
   res.status(200).json({
     status: 'success',
@@ -77,39 +71,40 @@ const loginUser = async (req, res, next) => {
 };
 
 const refreshToken = async (req, res, next) => {
-  const refreshToken = req.body.refreshToken;
-  if (!refreshToken) {
-    return next(createError(400, 'Refresh token is required'));
+  try {
+    const refreshToken = req.body.refreshToken;
+    if (!refreshToken) {
+      return next(createError(400, 'Refresh token is required'));
+    }
+
+    const userId = req.params.id;
+    const user = await User.findById(userId);
+    if (!user) {
+      return next(createError(404, 'User not found'));
+    }
+    const storedRefreshToken =await jwtRedis.getRefreshToken(userId);
+    console.log(storedRefreshToken);
+
+    if (refreshToken !== storedRefreshToken) {
+      return next(createError(400, 'Refresh token is Wrong!!'));
+    }
+
+    const newAccessToken = await generateAccessToken(user);
+
+    res.status(200).json({
+      status: 'success',
+      user,
+      newAccessToken,
+    });
+  } catch (error) {
+    // Log the error for debugging purposes
+    console.error(error);
+    // Send a generic error response to the client
+    res.status(500).json({
+      status: 'error',
+      message: 'An error occurred while processing your request.',
+    });
   }
-
-  const decoded = verifyToken(refreshToken, process.env.REFRESH_TOKEN_SECRET);
-  if (!decoded || decoded === 'TokenExpiredError') {
-    return next(createError(401, 'Invalid refresh token'));
-  }
-
-  const user = await User.findById(decoded.userId);
-  if (!user) {
-    return next(createError(404, 'User not found'));
-  }
-
-  const [newToken, newRefreshToken] = await Promise.all([
-    generateAccessToken(user),
-    generateRefreshToken(user),
-  ]);
-
-  res.cookie('access_token', newToken, {
-    httpOnly: true, // Prevent access from client-side scripts
-    secure: process.env.NODE_ENV === 'production', // Only send over HTTPS in production
-    sameSite: 'strict', // Prevent CSRF attacks
-    maxAge: 1000 * 60 * 60 * 24 * 7, // 7 days in milliseconds
-  });
-
-  res.status(200).json({
-    status: 'success',
-    user,
-    token: newToken,
-    refreshToken: newRefreshToken,
-  });
 };
 
 const logout = (req, res, next) => {
